@@ -15,7 +15,8 @@ def handler(request):
     the error information. The error information is grouped and tickets
     are created in the current sprint.
     """
-    logging.info("x01: stepping into handler")
+    logging.info(
+        f"x01: stepping into handler with: {request.data.decode('utf-8')}")
 
     jira_user = os.environ["JIRA_USER"]
     jira_server = os.environ["JIRA_SERVER"]
@@ -35,11 +36,17 @@ def handler(request):
     titles = atlassian.list_issue_titles(client, jql)
     sprint_id = atlassian.get_current_sprint(client, jira_board)
 
-    logging.info(f"Finding errors for sprint {sprint_id} of project [{jira_projects}]...")
+    logging.info(
+        f"Finding errors for sprint {sprint_id} of project [{jira_projects}]...")
 
-    # time = (datetime.utcnow() - timedelta(minutes=60)).isoformat(timespec="milliseconds") + "Z"
-    # records = datastore.fetch("ErrorReporting", "receive_timestamp", ">=", time)
-    grouped = utils.group_by(request, "project_id", "resource", "type")
+    try:
+        grouped = utils.group_by(
+            json.loads(request.data.message.attributes.decode('utf-8')),
+            "project_id", "resource", "type")
+    except Exception as e:
+        logging.info('Extract of attributes failed')
+        logging.debug(e)
+        raise e
 
     for tub, data in grouped:
         title = f"Fix bug in {tub[0]} {tub[1]}"
