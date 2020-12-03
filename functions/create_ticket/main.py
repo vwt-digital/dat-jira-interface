@@ -1,3 +1,4 @@
+import base64
 import os
 import json
 import logging
@@ -39,14 +40,13 @@ def handler(request):
     logging.info(
         f"Finding errors for sprint {sprint_id} of project [{jira_projects}]...")
 
-    try:
-        grouped = utils.group_by(
-            json.loads(request.data.message.attributes.decode('utf-8')),
-            "project_id", "resource", "type")
-    except Exception as e:
-        logging.info('Extract of attributes failed')
-        logging.debug(e)
-        raise e
+    # Extract data from request
+    envelope = json.loads(request.data.decode('utf-8'))
+    payload = base64.b64decode(envelope['message']['data'])
+
+    grouped = utils.group_by(
+        json.loads(payload),
+        "project_id", "resource", "type")
 
     for tub, data in grouped:
         title = f"Fix bug in {tub[0]} {tub[1]}"
