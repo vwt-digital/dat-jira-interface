@@ -15,6 +15,7 @@ def handler(request):
     the error information. The error information is grouped and tickets
     are created in the current sprint.
     """
+    logging.info("x01: stepping into handler")
 
     jira_user = os.environ["JIRA_USER"]
     jira_server = os.environ["JIRA_SERVER"]
