@@ -2,20 +2,18 @@ import os
 import json
 import logging
 
-import atlassian
-import datastore
+import utils
 import secretmanager
-
-from datetime import datetime, timedelta
+import atlassian
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)7s: %(message)s")
 
 
 def handler(request):
     """
-    When triggered, this function fetches error logs from google cloud datastore.
-    These errors are grouped by project_id and resource.type. Consequently,
-    for every group of erros a Jira ticket is created and added to the sprint.
+    When triggered, this function receives a request. The requests holds
+    the error information. The error information is grouped and tickets
+    are created in the current sprint.
     """
 
     jira_user = os.environ["JIRA_USER"]
@@ -38,12 +36,12 @@ def handler(request):
 
     logging.info(f"Finding errors for sprint {sprint_id} of project [{jira_projects}]...")
 
-    time = (datetime.utcnow() - timedelta(minutes=60)).isoformat(timespec="milliseconds") + "Z"
-    records = datastore.fetch("ErrorReporting", "receive_timestamp", ">=", time)
-    grouped = datastore.group_by(records, "project_id", "resource", "type")
+    # time = (datetime.utcnow() - timedelta(minutes=60)).isoformat(timespec="milliseconds") + "Z"
+    # records = datastore.fetch("ErrorReporting", "receive_timestamp", ">=", time)
+    grouped = utils.group_by(request, "project_id", "resource", "type")
 
-    for tuple, data in grouped:
-        title = f"Fix bug in {tuple[0]} {tuple[1]}"
+    for tub, data in grouped:
+        title = f"Fix bug in {tub[0]} {tub[1]}"
         description = "\n".join(json.dumps(item) for item in list(data)[:5])
         if title not in titles:
             logging.info(f"Creating jira ticket: {title}")
