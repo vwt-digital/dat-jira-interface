@@ -3,7 +3,6 @@ import os
 import json
 import logging
 
-import utils
 import secretmanager
 import atlassian
 
@@ -42,21 +41,16 @@ def handler(request):
 
     # Extract data from request
     envelope = json.loads(request.data.decode('utf-8'))
-    payload = base64.b64decode(envelope['message']['data'])
+    payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    grouped = utils.group_by(
-        json.loads(payload),
-        "project_id", "resource", "type")
+    title = f"Fix bug in {payload['project_id']} {payload['resource']['type']}"
+    description = "\n".join(json.dumps(item) for item in list(payload)[:5])
+    if title not in titles:
+        logging.info(f"Creating jira ticket: {title}")
+        issue = atlassian.create_issue(
+            client=client,
+            project=jira_project,
+            title=title,
+            description=description)
 
-    for tub, data in grouped:
-        title = f"Fix bug in {tub[0]} {tub[1]}"
-        description = "\n".join(json.dumps(item) for item in list(data)[:5])
-        if title not in titles:
-            logging.info(f"Creating jira ticket: {title}")
-            issue = atlassian.create_issue(
-                client=client,
-                project=jira_project,
-                title=title,
-                description=description)
-
-            atlassian.add_to_sprint(client, sprint_id, issue.key)
+        atlassian.add_to_sprint(client, sprint_id, issue.key)
