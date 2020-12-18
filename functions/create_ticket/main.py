@@ -43,14 +43,13 @@ def handler(request):
     envelope = json.loads(request.data.decode('utf-8'))
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    title = f"Fix bug in {payload['project_id']} {payload['resource']['type']}"
-    description = "\n".join(json.dumps(item) for item in list(payload)[:5])
+    title = f"Fix bug in {payload['resource']['labels']['project_id']} {payload['resource']['type']}"
     if title not in titles:
         logging.info(f"Creating jira ticket: {title}")
         issue = atlassian.create_issue(
             client=client,
             project=jira_project,
             title=title,
-            description=description)
+            description=str(payload))
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
