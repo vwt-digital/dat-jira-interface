@@ -53,3 +53,5 @@ def handler(request):
             description=str(payload))
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
+    else:
+        logging.info("Not creating: duplicate found.")
