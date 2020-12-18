@@ -44,6 +44,7 @@ def handler(request):
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
     title = f"Fix bug in {payload['resource']['labels']['project_id']} {payload['resource']['type']}"
+    logging.info(title)
     if title not in titles:
         logging.info(f"Creating jira ticket: {title}")
         issue = atlassian.create_issue(
@@ -54,4 +55,4 @@ def handler(request):
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
     else:
-        logging.info("Not creating: duplicate found.")
+        logging.info(f"Not creating: {title}, duplicate found.")
