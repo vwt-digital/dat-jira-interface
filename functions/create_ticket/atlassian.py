@@ -1,6 +1,6 @@
 from jira import JIRA
 from retry import retry
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError as RequestConnectionError
 
 
 def jira_init(user, api_key, server):
@@ -17,7 +17,7 @@ def jira_init(user, api_key, server):
     return client
 
 
-@retry(ConnectionError, tries=3, delay=2, backoff=2)
+@retry(RequestConnectionError, tries=3, delay=2, backoff=2)
 def list_issue_titles(client, jql):
     """
     Lists jira issues based on a jira query.
@@ -30,8 +30,8 @@ def list_issue_titles(client, jql):
     return titles
 
 
-@retry(ConnectionError, tries=3, delay=2, backoff=2)
-def create_issue(client, project, title, description, type='Bug'):
+@retry(RequestConnectionError, tries=3, delay=2, backoff=2)
+def create_issue(client, project, title, description, issue_type='Bug'):
     """
     Creates a jira issue.
     """
@@ -39,13 +39,13 @@ def create_issue(client, project, title, description, type='Bug'):
     issue = client.create_issue(
         project=project,
         summary=title,
-        issuetype={'name': type},
+        issuetype={'name': issue_type},
         description=description)
 
     return issue
 
 
-@retry(ConnectionError, tries=3, delay=2, backoff=2)
+@retry(RequestConnectionError, tries=3, delay=2, backoff=2)
 def get_current_sprint(client, board_id):
     """
     Returns the current sprint for a scrum board.
@@ -64,7 +64,7 @@ def get_current_sprint(client, board_id):
     return current_sprint.id
 
 
-@retry(ConnectionError, tries=3, delay=2, backoff=2)
+@retry(RequestConnectionError, tries=3, delay=2, backoff=2)
 def add_to_sprint(client, sprint_id, issue_key):
     """
     Adds issues to a sprint.
