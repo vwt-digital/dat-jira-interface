@@ -49,7 +49,7 @@ def handler(request):
     envelope = json.loads(request.data.decode('utf-8'))
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    title = get_issue_title(payload['resource'].get('issue_type', 'bug'),
+    title = get_issue_title(payload['resource'].get('issue_type', 'error'),
                             project_id=payload['resource']['labels']['project_id'],
                             issue_type=payload['resource']['type'])
     logging.info(title)
