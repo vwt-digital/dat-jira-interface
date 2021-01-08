@@ -30,7 +30,7 @@ def handler(request):
     jira_projects = os.environ["JIRA_PROJECTS"]
     jira_board = os.environ["JIRA_BOARD"]
     jira_api_key = secretmanager.get_secret(
-        os.environ["X_GOOGLE_GCP_PROJECT"],
+        os.environ["PROJECT"],
         os.environ["JIRA_SECRET_ID"])
 
     client = atlassian.jira_init(jira_user, jira_api_key, jira_server)
