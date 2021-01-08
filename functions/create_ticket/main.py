@@ -11,8 +11,8 @@ from titles import issue_titles
 logging.basicConfig(level=logging.INFO, format="%(levelname)7s: %(message)s")
 
 
-def get_issue_title(issue_type: str, **kwargs) -> str:
-    return issue_titles[issue_type].format(**kwargs)
+def get_issue_title(title_type: str, **kwargs) -> str:
+    return issue_titles[title_type].format(**kwargs)
 
 
 def handler(request):
@@ -30,7 +30,7 @@ def handler(request):
     jira_projects = os.environ["JIRA_PROJECTS"]
     jira_board = os.environ["JIRA_BOARD"]
     jira_api_key = secretmanager.get_secret(
-        os.environ["X_GOOGLE_GCP_PROJECT"],
+        os.environ["PROJECT"],
         os.environ["JIRA_SECRET_ID"])
 
     client = atlassian.jira_init(jira_user, jira_api_key, jira_server)
@@ -49,7 +49,7 @@ def handler(request):
     envelope = json.loads(request.data.decode('utf-8'))
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    title = get_issue_title(payload['resource'].get('issue_type', 'error'),
+    title = get_issue_title(title_type=payload['resource'].get('issue_type', 'error'),
                             project_id=payload['resource']['labels']['project_id'],
                             issue_type=payload['resource']['type'])
     logging.info(title)
