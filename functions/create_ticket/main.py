@@ -6,13 +6,7 @@ import logging
 import secretmanager
 import atlassian
 
-from titles import issue_titles
-
 logging.basicConfig(level=logging.INFO, format="%(levelname)7s: %(message)s")
-
-
-def get_issue_title(title_type: str, **kwargs) -> str:
-    return issue_titles[title_type].format(**kwargs)
 
 
 def handler(request):
@@ -49,9 +43,7 @@ def handler(request):
     envelope = json.loads(request.data.decode('utf-8'))
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    title = get_issue_title(title_type=payload['resource'].get('issue_type', 'error'),
-                            project_id=payload['resource']['labels']['project_id'],
-                            issue_type=payload['resource']['type'])
+    title = next(iter(payload))
     logging.info(title)
     if title not in titles:
         logging.info(f"Creating jira ticket: {title}")
@@ -59,7 +51,7 @@ def handler(request):
             client=client,
             project=jira_project,
             title=title,
-            description=str(payload))
+            description=str(payload[title]))
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
     else:
