@@ -43,7 +43,7 @@ def handler(request):
     envelope = json.loads(request.data.decode('utf-8'))
     payload = json.loads(base64.b64decode(envelope['message']['data']))
 
-    title = next(iter(payload))
+    title = payload["issue"]["title"]
     logging.info(title)
     if title not in titles:
         logging.info(f"Creating jira ticket: {title}")
@@ -51,7 +51,7 @@ def handler(request):
             client=client,
             project=jira_project,
             title=title,
-            description=str(payload[title]))
+            description=str(payload["issue"]["payload"]))
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
     else:
