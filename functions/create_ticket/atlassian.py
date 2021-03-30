@@ -7,9 +7,7 @@ def jira_init(user, api_key, server):
     Initializes a Jira client.
     """
 
-    options = {
-        'server': server
-    }
+    options = {"server": server}
 
     client = JIRA(options, basic_auth=(user, api_key))
 
@@ -30,7 +28,7 @@ def list_issue_titles(client, jql):
 
 
 @retry(ConnectionError, tries=3, delay=2, backoff=2)
-def create_issue(client, project, title, description, issue_type='Bug'):
+def create_issue(client, project, title, description, issue_type="Bug"):
     """
     Creates a jira issue.
     """
@@ -38,14 +36,15 @@ def create_issue(client, project, title, description, issue_type='Bug'):
     issue = client.create_issue(
         project=project,
         summary=title,
-        issuetype={'name': issue_type},
-        description=description)
+        issuetype={"name": issue_type},
+        description=description,
+    )
 
     return issue
 
 
 @retry(ConnectionError, tries=3, delay=2, backoff=2)
-def get_current_sprint(client, board_id):
+def get_current_sprint(client, board_id, project):
     """
     Returns the current sprint for a scrum board.
     """
@@ -54,7 +53,7 @@ def get_current_sprint(client, board_id):
     sprints = client.sprints(board_id)
 
     for sprint in reversed(sprints):
-        if sprint.state == 'ACTIVE':
+        if sprint.state == "ACTIVE" and f"{project} Sprint" in sprint.name:
             current_sprint = sprint
 
     if not current_sprint:
