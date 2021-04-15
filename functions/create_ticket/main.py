@@ -28,7 +28,7 @@ def handler(request):
 
     client = atlassian.jira_init(jira_user, jira_api_key, jira_server)
 
-    filter_prefix = "status!=Done AND status!=Cancelled AND type=Bug AND project="
+    filter_prefix = 'status!=Done AND status!="For Review" AND status!=Cancelled AND type=Bug AND project='
     projects = [filter_prefix + project for project in jira_projects.split("+")]
 
     jql = " OR ".join(projects)
