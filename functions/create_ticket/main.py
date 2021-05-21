@@ -5,6 +5,7 @@ import os
 
 import atlassian
 import secretmanager
+from config import EPICS
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)7s: %(message)s")
 
@@ -55,5 +56,14 @@ def handler(request):
         )
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
+        issue_category = payload["issue"].get("category")
+        if issue_category:
+            epic_id = EPICS.get(issue_category)
+            if epic_id:
+                atlassian.add_to_epic(client, epic_id, issue.key)
+            else:
+                logging.error(
+                    f"Category '{issue_category}' is given in message but cannot be found in EPICS dict in config."
+                )
     else:
         logging.info(f"Not creating: {title}, duplicate found.")
