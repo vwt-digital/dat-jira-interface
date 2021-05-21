@@ -1,0 +1,3 @@
+EPICS = {
+    "category_1": "epic_id"
+}
