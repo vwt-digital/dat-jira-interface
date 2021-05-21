@@ -80,19 +80,6 @@ def add_to_epic(client, epic_id, issue_key):
 
 
 @retry(ConnectionError, tries=3, delay=2, backoff=2)
-def add_to_fix_version(client, fix_version, issue_key):
-    """
-    Adds issues to a fix version.
-    """
-    fix_versions = []
-    issue = client.issue(issue_key)
-    for version in issue.fields.fixVersions:
-        fix_versions.append({"name": version.name})
-    fix_versions.append({"name": fix_version})
-    issue.update(fields={"fixVersions": fix_versions})
-
-
-@retry(ConnectionError, tries=3, delay=2, backoff=2)
 def list_issue_comment_ids(client, issue_id):
     """
     Get jira issue from its ID
