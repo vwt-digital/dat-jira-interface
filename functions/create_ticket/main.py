@@ -2,10 +2,11 @@ import base64
 import json
 import logging
 import os
+from datetime import date, timedelta
 
 import atlassian
 import secretmanager
-from config import EPICS
+from config import DUE_DATE_BOOL, EPICS
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)7s: %(message)s")
 
@@ -65,5 +66,15 @@ def handler(request):
                 logging.error(
                     f"Category '{issue_category}' is given in message but cannot be found in EPICS dict in config."
                 )
+            due_date_bool = DUE_DATE_BOOL.get(issue_category)
+            if due_date_bool:
+                # Get today's date
+                today = date.today()
+                # Add a week
+                week = timedelta(days=7)
+                due_date = today + week
+                # Set due date
+                due_date_string = due_date.strftime("%Y-%m-%d")
+                atlassian.set_due_date(client, issue.key, due_date_string)
     else:
         logging.info(f"Not creating: {title}, duplicate found.")

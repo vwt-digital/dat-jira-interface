@@ -5,6 +5,7 @@ This function creates Jira tickets based on the JSON message it gets.
 1. Make sure a ```config.py``` file exists within the directory, based on the [config.py.example](config.py.example), with the correct configuration:
     ~~~
     EPICS = A dictionary that links the category field of the message to a Jira epic
+    DUE_DATE_BOOL = A dictionary containing booleans that links the category field of the message to whether a due date should be set
     ~~~
 2. Make sure the following variables are present in the environment:
     ~~~
