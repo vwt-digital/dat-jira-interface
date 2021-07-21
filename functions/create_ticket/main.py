@@ -85,44 +85,44 @@ def handler(request):
         logging.info("Jira ticket found with same name, checking comments...")
         # Check for comments here
         if payload["issue"]["comment"]:
-            # Replace '-' in last part of title, otherwise JIRA does not see issues
             comment = payload["issue"]["comment"]
-
-            jql_title_list = title.split(":")
-            jql_title_list[-1] = jql_title_list[-1].replace("-", " ")
-            jql_title = ":".join(jql_title_list)
-            # Get issues with title
-            jql_prefix_titles = (
-                f"type = Bug AND status != Done AND status != Cancelled "
-                f'AND text ~ "{jql_title}" '
-                "AND project = "
-            )
-            projects_titles = [
-                jql_prefix_titles + project for project in jira_projects.split("+")
-            ]
-            jql_titles = " OR ".join(projects_titles)
-            jql_titles = f"{jql_titles} ORDER BY priority DESC"
-            issues = atlassian.list_issues(client, jql_titles)
-            # For every issue with this title
-            for issue in issues:
-                # Get comments of issues
-                issue_id = atlassian.get_issue_id(issue)
-                issue_comment_ids = atlassian.list_issue_comment_ids(client, issue_id)
-                comment_not_yet_exists = True
-                for comment_id in issue_comment_ids:
-                    # Check if the comment without where to find it does not yet exist
-                    comment_body = atlassian.get_comment_body(client, issue, comment_id)
-                    if repr(comment_body) == repr(comment):
-                        logging.info(f"Identical comments found for issue: {title}")
-                        comment_not_yet_exists = False
-                        break
-                if comment_not_yet_exists:
-                    logging.info(f"Adding comment to jira ticket: {issue}")
-                    # Add comment to jira ticket
-                    atlassian.add_comment(client, issue_id, comment)
-                else:
-                    logging.info(
-                        f"Not update jira ticket, identical comment found: {title}"
-                    )
+            add_comment(client, comment, title, jira_projects)
         else:
             logging.info(f"Not creating: {title}, duplicate found without comment.")
+
+
+def add_comment(client, comment, title, jira_projects):
+    jql_title_list = title.split(":")
+    jql_title_list[-1] = jql_title_list[-1].replace("-", " ")
+    jql_title = ":".join(jql_title_list)
+    # Get issues with title
+    jql_prefix_titles = (
+        f"type = Bug AND status != Done AND status != Cancelled "
+        f'AND text ~ "{jql_title}" '
+        "AND project = "
+    )
+    projects_titles = [
+        jql_prefix_titles + project for project in jira_projects.split("+")
+    ]
+    jql_titles = " OR ".join(projects_titles)
+    jql_titles = f"{jql_titles} ORDER BY priority DESC"
+    issues = atlassian.list_issues(client, jql_titles)
+    # For every issue with this title
+    for issue in issues:
+        # Get comments of issues
+        issue_id = atlassian.get_issue_id(issue)
+        issue_comment_ids = atlassian.list_issue_comment_ids(client, issue_id)
+        comment_not_yet_exists = True
+        for comment_id in issue_comment_ids:
+            # Check if the comment without where to find it does not yet exist
+            comment_body = atlassian.get_comment_body(client, issue, comment_id)
+            if repr(comment_body) == repr(comment):
+                logging.info(f"Identical comments found for issue: {title}")
+                comment_not_yet_exists = False
+                break
+        if comment_not_yet_exists:
+            logging.info(f"Adding comment to jira ticket: {issue}")
+            # Add comment to jira ticket
+            atlassian.add_comment(client, issue_id, comment)
+        else:
+            logging.info(f"Not update jira ticket, identical comment found: {title}")
