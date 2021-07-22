@@ -46,7 +46,7 @@ def handler(request):
     payload = json.loads(base64.b64decode(envelope["message"]["data"]))
 
     title = payload["issue"]["title"]
-    logging.info(title)
+    logging.info(f"Title: {title}")
     if title not in titles:
         logging.info(f"Creating jira ticket: {title}")
         issue = atlassian.create_issue(
@@ -55,6 +55,11 @@ def handler(request):
             title=title,
             description=str(payload["issue"]["payload"]),
         )
+
+        # Add comment to jira ticket
+        if payload["issue"]["comment"]:
+            logging.info(f"Adding comment to issue: {title}")
+            atlassian.add_comment(client, issue, payload["issue"]["comment"])
 
         atlassian.add_to_sprint(client, sprint_id, issue.key)
         issue_category = payload["issue"].get("category")
@@ -77,4 +82,47 @@ def handler(request):
                 due_date_string = due_date.strftime("%Y-%m-%d")
                 atlassian.set_due_date(client, issue.key, due_date_string)
     else:
-        logging.info(f"Not creating: {title}, duplicate found.")
+        logging.info("Jira ticket found with same name, checking comments...")
+        # Check for comments here
+        if payload["issue"]["comment"]:
+            comment = payload["issue"]["comment"]
+            add_comment(client, comment, title, jira_projects)
+        else:
+            logging.info(f"Not creating: {title}, duplicate found without comment.")
+
+
+def add_comment(client, comment, title, jira_projects):
+    jql_title_list = title.split(":")
+    jql_title_list[-1] = jql_title_list[-1].replace("-", " ")
+    jql_title = ":".join(jql_title_list)
+    # Get issues with title
+    jql_prefix_titles = (
+        f"type = Bug AND status != Done AND status != Cancelled "
+        f'AND text ~ "{jql_title}" '
+        "AND project = "
+    )
+    projects_titles = [
+        jql_prefix_titles + project for project in jira_projects.split("+")
+    ]
+    jql_titles = " OR ".join(projects_titles)
+    jql_titles = f"{jql_titles} ORDER BY priority DESC"
+    issues = atlassian.list_issues(client, jql_titles)
+    # For every issue with this title
+    for issue in issues:
+        # Get comments of issues
+        issue_id = atlassian.get_issue_id(issue)
+        issue_comment_ids = atlassian.list_issue_comment_ids(client, issue_id)
+        comment_not_yet_exists = True
+        for comment_id in issue_comment_ids:
+            # Check if the comment without where to find it does not yet exist
+            comment_body = atlassian.get_comment_body(client, issue, comment_id)
+            if repr(comment_body) == repr(comment):
+                logging.info(f"Identical comments found for issue: {title}")
+                comment_not_yet_exists = False
+                break
+        if comment_not_yet_exists:
+            logging.info(f"Adding comment to jira ticket: {issue}")
+            # Add comment to jira ticket
+            atlassian.add_comment(client, issue_id, comment)
+        else:
+            logging.info(f"Not update jira ticket, identical comment found: {title}")
